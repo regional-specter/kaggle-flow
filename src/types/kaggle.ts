@@ -24,4 +24,4 @@ export interface DatasetListParams {
   pageSize?: number
 }
 
-export type AppTab = 'discover' | 'bookmarked' | 'settings'
+export type AppTab = 'discover' | 'study' | 'bookmarked' | 'settings'

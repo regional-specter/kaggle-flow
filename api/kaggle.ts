@@ -2,7 +2,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const KAGGLE_API_BASE = 'https://www.kaggle.com/api/v1'
 
-const ALLOWED_PATH_PREFIXES = ['/datasets/list', '/datasets/metadata/']
+const ALLOWED_PATH_PREFIXES = [
+  '/datasets/list',
+  '/datasets/metadata/',
+  '/competitions/list',
+]
+
+const KAGGLE_USER_AGENT = 'kaggle-api/v1.7.0'
 
 function getKagglePath(pathQuery: string | string[] | undefined): string {
   if (!pathQuery) return ''
@@ -17,7 +23,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const auth = req.headers.authorization
-  if (!auth?.startsWith('Basic ')) {
+  if (
+    typeof auth !== 'string' ||
+    /[\r\n]/.test(auth) ||
+    (!auth.startsWith('Basic ') && !auth.startsWith('Bearer '))
+  ) {
     return res.status(401).json({ error: 'Missing Authorization header' })
   }
 
@@ -40,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: {
         Authorization: auth,
         Accept: 'application/json',
+        'User-Agent': KAGGLE_USER_AGENT,
       },
     })
 

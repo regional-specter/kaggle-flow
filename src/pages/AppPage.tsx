@@ -8,6 +8,7 @@ import { useCredentials } from '../hooks/useCredentials'
 import { BookmarkedView } from '../views/BookmarkedView'
 import { DiscoverFeed } from '../views/DiscoverFeed'
 import { SettingsView } from '../views/SettingsView'
+import { StudyView } from '../views/StudyView'
 
 export function AppPage() {
   const [activeTab, setActiveTab] = useAppTab()
@@ -35,6 +36,15 @@ export function AppPage() {
               isBookmarked={isBookmarked}
               onToggleBookmark={toggleBookmark}
               onGoToSettings={() => setActiveTab('settings')}
+            />
+          </PageTransition>
+        )}
+
+        {activeTab === 'study' && (
+          <PageTransition tabKey="study">
+            <StudyView
+              isBookmarked={isBookmarked}
+              onToggleBookmark={toggleBookmark}
             />
           </PageTransition>
         )}

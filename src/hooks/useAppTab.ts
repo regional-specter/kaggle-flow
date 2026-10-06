@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AppTab } from '../types/kaggle'
 
-const VALID_TABS: AppTab[] = ['discover', 'bookmarked', 'settings']
+const VALID_TABS: AppTab[] = ['discover', 'study', 'bookmarked', 'settings']
 
 function parseTabFromUrl(): AppTab {
   const tab = new URLSearchParams(window.location.search).get('tab')

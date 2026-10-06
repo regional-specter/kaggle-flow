@@ -39,8 +39,14 @@ export function DatasetCard({
   })
 
   const creator = getCreatorName(dataset)
-  const summary = buildDatasetSummary(dataset)
   const description = getDatasetDescription(dataset)
+  const hasLiveStats =
+    dataset.usabilityRating != null ||
+    dataset.downloadCount != null ||
+    dataset.voteCount != null ||
+    dataset.totalBytes != null ||
+    dataset.lastUpdated != null
+  const summary = hasLiveStats ? buildDatasetSummary(dataset) : null
   const primaryMetric = formatRating(dataset.usabilityRating)
   const metricLabel = 'Usability Score'
 
@@ -121,6 +127,7 @@ export function DatasetCard({
         </div>
       </header>
 
+      {hasLiveStats && (
       <div className="mt-6 flex flex-col gap-4 sm:mt-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400 sm:text-xs">
@@ -156,11 +163,15 @@ export function DatasetCard({
           </div>
         </div>
       </div>
+      )}
 
-      <p className="mt-5 border-t border-gray-50 pt-4 text-sm leading-relaxed text-gray-500 sm:mt-6 sm:pt-5">
-        {summary}
-      </p>
+      {summary && (
+        <p className="mt-5 border-t border-gray-50 pt-4 text-sm leading-relaxed text-gray-500 sm:mt-6 sm:pt-5">
+          {summary}
+        </p>
+      )}
 
+      {hasLiveStats && (
       <footer className="mt-3 flex flex-wrap gap-2 sm:mt-4">
         <StatusBadge variant="neutral">
           {formatCount(dataset.voteCount)} votes
@@ -169,6 +180,7 @@ export function DatasetCard({
           Updated {formatDate(dataset.lastUpdated)}
         </StatusBadge>
       </footer>
+      )}
     </motion.article>
   )
 }

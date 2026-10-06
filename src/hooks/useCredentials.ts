@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { hasUsableCredentials } from '../api/kaggle'
 import type { KaggleCredentials } from '../types/kaggle'
 import { useLocalStorage } from './useLocalStorage'
 
@@ -26,9 +27,7 @@ export function useCredentials() {
     setCredentials(emptyCredentials)
   }, [setCredentials])
 
-  const hasCredentials = Boolean(
-    credentials.username.trim() && credentials.apiKey.trim(),
-  )
+  const hasCredentials = hasUsableCredentials(credentials)
 
   return {
     credentials,

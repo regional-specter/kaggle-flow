@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle2, KeyRound, Shield, Trash2 } from 'lucide-react'
-import { validateCredentials } from '../../api/kaggle'
+import {
+  hasUsableCredentials,
+  resolveCredentials,
+  validateCredentials,
+} from '../../api/kaggle'
 import type { KaggleCredentials } from '../../types/kaggle'
 import { ErrorState } from '../ui/ErrorState'
 import { StatusBadge } from '../ui/StatusBadge'
@@ -31,11 +35,13 @@ export function CredentialsForm({
     setError(null)
     setSaved(false)
 
-    const next = { username: username.trim(), apiKey: apiKey.trim() }
+    const next = resolveCredentials({ username, apiKey })
 
     try {
       await validateCredentials(next)
       onSave(next)
+      setUsername(next.username)
+      setApiKey(next.apiKey)
       setSaved(true)
     } catch (err) {
       setError(
@@ -60,8 +66,8 @@ export function CredentialsForm({
               API Credentials
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-gray-500">
-              Connect your Kaggle account using Basic Authentication. Credentials
-              are stored locally in your browser and never sent anywhere except
+              Connect your Kaggle account with an API token. Credentials are
+              stored locally in your browser and never sent anywhere except
               Kaggle&apos;s API.
             </p>
           </div>
@@ -79,6 +85,9 @@ export function CredentialsForm({
               className="mb-2 block text-sm font-medium text-gray-700"
             >
               Username
+              <span className="ml-2 font-normal text-gray-400">
+                only for a legacy API key
+              </span>
             </label>
             <input
               id="username"
@@ -112,20 +121,21 @@ export function CredentialsForm({
           <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
             <Shield className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
             <p className="text-xs leading-relaxed text-gray-500">
-              Find your API token at{' '}
+              On{' '}
               <a
-                href="https://www.kaggle.com/settings"
+                href="https://www.kaggle.com/settings/api"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-gray-700 underline-offset-2 hover:underline"
               >
-                kaggle.com/settings
+                kaggle.com/settings/api
               </a>
-              . We encode credentials as{' '}
+              , choose Generate New Token and paste it here. Tokens start with{' '}
               <code className="rounded bg-white px-1 py-0.5 text-[11px] text-gray-600">
-                Authorization: Basic
+                KGAT_
               </code>{' '}
-              for each request.
+              and do not need a username. A legacy key from Create Legacy API Key
+              still needs your username.
             </p>
           </div>
 
@@ -149,7 +159,7 @@ export function CredentialsForm({
           <div className="flex flex-wrap gap-3 pt-2">
             <button
               type="submit"
-              disabled={saving || !username.trim() || !apiKey.trim()}
+              disabled={saving || !hasUsableCredentials({ username, apiKey })}
               className="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? 'Validating…' : 'Save credentials'}

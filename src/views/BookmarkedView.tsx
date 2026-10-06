@@ -31,7 +31,7 @@ export function BookmarkedView({
       {datasets.length === 0 ? (
         <EmptyState
           title="No bookmarks yet"
-          description="Bookmark datasets from the Discover Feed to build your personal collection."
+          description="Bookmark datasets from Discover or Study to build your personal collection."
           action={
             <button
               type="button"

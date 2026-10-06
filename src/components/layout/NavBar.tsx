@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
-import { Bookmark, Compass, Database, Settings } from 'lucide-react'
+import { Bookmark, Compass, Database, Settings, Sparkles } from 'lucide-react'
 import type { AppTab } from '../../types/kaggle'
 import { springTransition } from '../../utils/motion'
 
 const tabs: { id: AppTab; label: string; shortLabel: string; icon: typeof Compass }[] = [
   { id: 'discover', label: 'Discover Feed', shortLabel: 'Discover', icon: Compass },
+  { id: 'study', label: 'Study', shortLabel: 'Study', icon: Sparkles },
   { id: 'bookmarked', label: 'Bookmarked', shortLabel: 'Saved', icon: Bookmark },
   { id: 'settings', label: 'Settings', shortLabel: 'Settings', icon: Settings },
 ]

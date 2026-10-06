@@ -1,4 +1,5 @@
 import { writeFileSync } from 'node:fs'
+import type { ServerResponse } from 'node:http'
 import { resolve } from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -60,6 +61,10 @@ Sitemap: ${siteUrl}/sitemap.xml
   }
 }
 
+function isServerResponse(res: unknown): res is ServerResponse {
+  return typeof res === 'object' && res !== null && 'writeHead' in res
+}
+
 const siteUrl = normalizeSiteUrl(process.env.VITE_SITE_URL)
 
 export default defineConfig({
@@ -70,6 +75,16 @@ export default defineConfig({
         target: 'https://www.kaggle.com/api/v1',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/kaggle/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('User-Agent', 'kaggle-api/v1.7.0')
+          })
+          proxy.on('error', (_err, _req, res) => {
+            if (!isServerResponse(res) || res.headersSent) return
+            res.writeHead(502, { 'Content-Type': 'text/plain' })
+            res.end('Could not reach Kaggle. Check your connection and try again.')
+          })
+        },
       },
     },
   },
