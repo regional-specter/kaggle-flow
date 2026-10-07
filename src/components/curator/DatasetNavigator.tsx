@@ -30,12 +30,15 @@ export function DatasetNavigator({
 }: DatasetNavigatorProps) {
   useEffect(() => {
     if (!selectedRef) return
-    document.getElementById(`study-item-${selectedRef}`)?.scrollIntoView({ block: 'nearest' })
+        document.getElementById(`study-item-${selectedRef}`)?.scrollIntoView({
+          block: 'nearest',
+          inline: 'nearest',
+        })
   }, [selectedRef])
 
   return (
     <aside
-      className={`border-gray-100 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7.5rem)] lg:self-start lg:overflow-y-auto lg:border-r ${
+      className={`min-w-0 border-gray-100 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7.5rem)] lg:self-start lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-y-contain lg:border-r ${
         hidden ? 'hidden lg:block' : 'block'
       }`}
     >
@@ -89,7 +92,7 @@ export function DatasetNavigator({
                   role="option"
                   aria-selected={active}
                   onClick={() => onSelect(dataset.ref)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition ${
+                  className={`flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-xl px-2.5 py-2.5 text-left transition ${
                     active ? 'bg-gray-50' : 'hover:bg-gray-50/70'
                   }`}
                 >

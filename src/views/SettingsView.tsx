@@ -1,5 +1,6 @@
 import { ShieldAlert } from 'lucide-react'
 import { CredentialsForm } from '../components/settings/CredentialsForm'
+import { GeminiKeyForm } from '../components/settings/GeminiKeyForm'
 import type { KaggleCredentials } from '../types/kaggle'
 
 interface SettingsViewProps {
@@ -7,6 +8,10 @@ interface SettingsViewProps {
   hasCredentials: boolean
   onSave: (credentials: KaggleCredentials) => void
   onClear: () => void
+  geminiKey: string
+  hasGeminiKey: boolean
+  onSaveGemini: (apiKey: string) => void
+  onClearGemini: () => void
 }
 
 export function SettingsView({
@@ -14,6 +19,10 @@ export function SettingsView({
   hasCredentials,
   onSave,
   onClear,
+  geminiKey,
+  hasGeminiKey,
+  onSaveGemini,
+  onClearGemini,
 }: SettingsViewProps) {
   return (
     <div className="space-y-6">
@@ -22,7 +31,7 @@ export function SettingsView({
           Settings
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Configure your Kaggle API connection and preferences.
+          Configure your Kaggle connection and the Gemini key used for study notes.
         </p>
       </div>
 
@@ -31,6 +40,13 @@ export function SettingsView({
         hasCredentials={hasCredentials}
         onSave={onSave}
         onClear={onClear}
+      />
+
+      <GeminiKeyForm
+        apiKey={geminiKey}
+        hasKey={hasGeminiKey}
+        onSave={onSaveGemini}
+        onClear={onClearGemini}
       />
 
       <div className="mx-auto max-w-2xl rounded-2xl border border-amber-100 bg-amber-50/50 p-5 sm:p-6">
@@ -48,9 +64,9 @@ export function SettingsView({
               them.
             </p>
             <p>
-              Credentials are used only to authenticate requests to Kaggle&apos;s
-              API. They are not sent to any other service. This app is not
-              affiliated with Kaggle.
+              The Kaggle token is sent only to Kaggle. The Gemini key is sent only
+              to Google when a study note is written. This app is not affiliated
+              with Kaggle or Google.
             </p>
             <p>
               Use your own API key at your own risk. Clear stored credentials

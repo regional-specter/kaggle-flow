@@ -8,14 +8,17 @@ import {
   Heart,
   LineChart,
   MessageSquare,
+  RefreshCw,
   Sparkles,
   Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { CuratedDataset, StudyLens } from '../../types/curator'
+import type { StudyDraftStatus } from '../../hooks/useStudyDraft'
+import type { CuratedDataset, StudyLens, StudyPoint } from '../../types/curator'
 import { STUDY_LENSES } from '../../types/curator'
 import type { StudyTone } from '../../types/curator'
 import { getKaggleDatasetUrl } from '../../utils/format'
+import { RichText } from './RichText'
 
 const lensIcons = {
   models: Sparkles,
@@ -47,6 +50,12 @@ interface DatasetBriefProps {
   hasNext: boolean
   onBackToList: () => void
   hidden?: boolean
+  draftPoints?: Record<StudyLens, StudyPoint[]> | null
+  draftStatus?: StudyDraftStatus
+  draftError?: string | null
+  hasGeminiKey?: boolean
+  onRewrite?: () => void
+  onGoToSettings?: () => void
 }
 
 function initials(owner: string): string {
@@ -77,6 +86,12 @@ export function DatasetBrief({
   hasNext,
   onBackToList,
   hidden = false,
+  draftPoints = null,
+  draftStatus = 'idle',
+  draftError = null,
+  hasGeminiKey = false,
+  onRewrite,
+  onGoToSettings,
 }: DatasetBriefProps) {
   const [open, setOpen] = useState<StudyLens[]>(['models', 'interviews'])
 
@@ -198,28 +213,59 @@ export function DatasetBrief({
         </a>
 
         <div className="mt-8">
-          <h3 className="text-base font-semibold tracking-tight text-gray-900">How to study this</h3>
-          <p className="mt-1 max-w-xl text-sm leading-relaxed text-gray-500">
-            Models to fit, statistics worth reporting, and how the same work shows up in
-            interviews, papers, and practice.
-          </p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-bold tracking-tight text-gray-900">How to study this</h3>
+              <p className="mt-1 max-w-xl text-sm leading-relaxed text-gray-500">
+                {draftStatus === 'ready'
+                  ? 'A longer note from Gemini, with formulas and ideas written for this table.'
+                  : 'Models to fit, statistics worth reporting, and how the same work shows up in interviews, papers, and practice.'}
+              </p>
+            </div>
+            {hasGeminiKey ? (
+              <button
+                type="button"
+                onClick={onRewrite}
+                disabled={draftStatus === 'loading' || !onRewrite}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${draftStatus === 'loading' ? 'animate-spin' : ''}`} />
+                {draftStatus === 'loading' ? 'Writing…' : 'Write again'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onGoToSettings}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Longer note with Gemini
+              </button>
+            )}
+          </div>
+          {draftError && (
+            <p className="mt-3 text-sm leading-relaxed text-red-600">{draftError}</p>
+          )}
 
-          <div className="mt-4 divide-y divide-gray-100">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-gray-100">
             {STUDY_LENSES.map((lens) => {
               const section = dataset.sections[lens.id]
+              const points = draftPoints?.[lens.id] ?? section.points
               const Icon = lensIcons[lens.id]
               const expanded = open.includes(lens.id)
               return (
-                <div key={lens.id} className="py-1">
+                <div key={lens.id} className="border-b border-gray-100 last:border-b-0">
                   <button
                     type="button"
                     aria-expanded={expanded}
                     onClick={() => toggle(lens.id)}
-                    className="flex w-full items-start gap-3 rounded-xl py-3 text-left"
+                    className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition hover:bg-gray-50/80"
                   >
                     <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-gray-900">{lens.title}</span>
+                      <span className="block text-sm font-bold tracking-tight text-gray-900">
+                        {lens.title}
+                      </span>
                       <span className="mt-0.5 block text-xs leading-relaxed text-gray-400">
                         {lens.blurb}
                       </span>
@@ -232,11 +278,21 @@ export function DatasetBrief({
                     />
                   </button>
                   {expanded && (
-                    <div className="mb-3 ml-7 space-y-3">
-                      {section.points.map((point) => (
-                        <div key={point.title}>
-                          <p className="text-sm font-medium text-gray-900">{point.title}</p>
-                          <p className="mt-0.5 text-sm leading-relaxed text-gray-500">{point.detail}</p>
+                    <div
+                      className={`min-w-0 space-y-5 px-4 pb-5 pl-11 ${
+                        draftStatus === 'loading' && !draftPoints ? 'opacity-60' : ''
+                      }`}
+                    >
+                      {points.map((point) => (
+                        <div key={point.title} className="min-w-0">
+                          <RichText
+                            text={point.title}
+                            className="text-sm font-bold tracking-tight text-gray-900"
+                          />
+                          <RichText
+                            text={point.detail}
+                            className="mt-1 text-sm leading-relaxed text-gray-600"
+                          />
                         </div>
                       ))}
                     </div>

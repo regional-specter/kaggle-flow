@@ -3,15 +3,25 @@ import { DatasetBrief } from '../components/curator/DatasetBrief'
 import { DatasetNavigator } from '../components/curator/DatasetNavigator'
 import { StatsRail } from '../components/curator/StatsRail'
 import { curatedDatasets, toKaggleDataset } from '../data/curatedDatasets'
+import { useStudyDraft } from '../hooks/useStudyDraft'
 import type { KaggleDataset } from '../types/kaggle'
 import type { StudyTopic } from '../types/curator'
 
 interface StudyViewProps {
+  geminiKey: string
+  hasGeminiKey: boolean
+  onGoToSettings: () => void
   isBookmarked: (ref: string) => boolean
   onToggleBookmark: (ref: string, dataset: KaggleDataset) => void
 }
 
-export function StudyView({ isBookmarked, onToggleBookmark }: StudyViewProps) {
+export function StudyView({
+  geminiKey,
+  hasGeminiKey,
+  onGoToSettings,
+  isBookmarked,
+  onToggleBookmark,
+}: StudyViewProps) {
   const [search, setSearch] = useState('')
   const [topic, setTopic] = useState<StudyTopic | 'All'>('All')
   const [selectedRef, setSelectedRef] = useState(curatedDatasets[0]?.ref ?? '')
@@ -31,6 +41,7 @@ export function StudyView({ isBookmarked, onToggleBookmark }: StudyViewProps) {
 
   const selected = filtered.find((dataset) => dataset.ref === selectedRef) ?? filtered[0] ?? null
   const index = selected ? filtered.findIndex((dataset) => dataset.ref === selected.ref) : -1
+  const draft = useStudyDraft(selected, geminiKey)
 
   const select = (ref: string) => {
     setSelectedRef(ref)
@@ -48,9 +59,9 @@ export function StudyView({ isBookmarked, onToggleBookmark }: StudyViewProps) {
         </p>
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
-        <div className="rounded-[28px] border border-gray-100 bg-white shadow-card">
-          <div className="grid items-start lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
+        <div className="min-w-0 overflow-hidden rounded-[28px] border border-gray-100 bg-white shadow-card">
+          <div className="grid min-w-0 items-start lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
             <DatasetNavigator
               datasets={filtered}
               total={curatedDatasets.length}
@@ -79,6 +90,12 @@ export function StudyView({ isBookmarked, onToggleBookmark }: StudyViewProps) {
                 hasNext={index >= 0 && index < filtered.length - 1}
                 onBackToList={() => setMobileDetail(false)}
                 hidden={!mobileDetail}
+                draftPoints={draft.points}
+                draftStatus={draft.status}
+                draftError={draft.error}
+                hasGeminiKey={hasGeminiKey}
+                onRewrite={draft.rewrite}
+                onGoToSettings={onGoToSettings}
               />
             ) : (
               <div className={`px-6 py-16 text-sm text-gray-500 ${mobileDetail ? 'block' : 'hidden lg:block'}`}>
