@@ -1,10 +1,11 @@
 import type { CuratedDataset, StudyLens, StudyPoint } from '../types/curator'
 import { STUDY_LENSES } from '../types/curator'
+import { repairJsonLatex } from '../utils/latex'
 
 const MODEL = 'gemini-3.5-flash-lite'
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
 
-export const STUDY_PROMPT_VERSION = 2
+export const STUDY_PROMPT_VERSION = 3
 
 const LENS_IDS = STUDY_LENSES.map((lens) => lens.id)
 
@@ -124,8 +125,10 @@ const STUDY_SCHEMA = {
               properties: {
                 title: { type: 'string' },
                 detail: { type: 'string' },
+                problem: { type: 'string' },
+                question: { type: 'string' },
               },
-              required: ['title', 'detail'],
+              required: ['title', 'detail', 'problem', 'question'],
             },
           },
         },
@@ -150,12 +153,18 @@ export async function writeStudyNote(
             text: [
               'You write study notes for one public dataset used to learn ordinary machine learning and statistics.',
               'The notes must be specific to this table. Do not give a generic checklist, and do not paraphrase the seed.',
-              'Each lens gets exactly 3 points. Each detail is 90 to 140 words of plain prose, longer than the seed, with a concrete procedure, comparison, or result.',
+              'Each lens gets exactly 3 points.',
+              'For models, statistics, research, and applications: title is a short label, not a question. detail is 90 to 140 words of plain prose, longer than the seed, with a concrete procedure, comparison, or result. Set problem and question to empty strings.',
               'Research ideas must be unusual enough to be worth doing and still possible on this public file. Name the estimator, the comparison, and what would count as a finding.',
-              'Interview details answer the question, they do not only restate it.',
-              'Use LaTeX. Models and statistics must each include at least one display formula in $$...$$. Use $...$ for inline quantities. Do not use \\( \\) or \\[ \\]. Do not use a dollar sign for money; write USD.',
+              'For interviews, fill every field:',
+              'title is a 2 to 5 word label.',
+              'problem is 60 to 100 words describing the concrete situation on this table, the decision at stake, and what a careless analysis would get wrong. Write it as a description. Do not ask a question in this field.',
+              'question is the exact sentence an interviewer would say out loud. One sentence, specific to this table, ending with a question mark. Do not repeat it inside problem or detail.',
+              'detail is 80 to 130 words that answer the question. Start with the answer. Do not restate the question.',
+              'Use LaTeX in models and statistics. Each of those two lenses includes at least one display formula between $$ and $$, and may use single dollar signs for inline quantities. Use KaTeX commands only. Pair every left delimiter with a right delimiter. Do not use \\( \\), \\[ \\], or equation environments. Do not break a formula across lines. Do not use a dollar sign for money; write USD.',
+              'Inside JSON, double every backslash. A command such as right, frac, beta, neq, nabla, text, times, or to must be written with two backslash characters, because one backslash followed by r, f, b, n, or t is a control character and breaks the formula.',
               'Stay inside the facts in the seed. Do not invent columns, row counts, or a target that the seed does not support.',
-              'No markdown headings, bullets, or code fences inside title or detail.',
+              'No markdown headings, bullets, or code fences inside any text field.',
             ].join(' '),
           },
         ],
@@ -175,15 +184,62 @@ export async function writeStudyNote(
   return parseStudyNote(text, dataset)
 }
 
+function clean(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function asQuestion(value: string): string {
+  if (/[?？]$/.test(value)) return value
+  return `${value.replace(/[.!]$/, '')}?`
+}
+
+function normalizeInterviewPoint(point: StudyPoint): StudyPoint {
+  let question = point.question?.trim() ?? ''
+  const problem = point.problem?.trim() ?? ''
+  let detail = point.detail.trim()
+  const title = point.title.trim()
+
+  if (!question && title.includes('?')) question = title
+  if (!question) {
+    const match = detail.match(/[^.!?\n][^.!?\n]*\?/)
+    if (match?.[0]) {
+      question = match[0].trim()
+      detail = detail.replace(match[0], '').replace(/\s{2,}/g, ' ').trim()
+    }
+  }
+  if (question) question = asQuestion(question)
+
+  return {
+    title,
+    detail,
+    ...(problem ? { problem } : {}),
+    ...(question ? { question } : {}),
+  }
+}
+
 function readPoints(value: unknown): StudyPoint[] {
   if (!Array.isArray(value)) return []
   return value.flatMap((item) => {
     if (!item || typeof item !== 'object') return []
-    const record = item as { title?: unknown; detail?: unknown }
-    const title = typeof record.title === 'string' ? record.title.trim() : ''
-    const detail = typeof record.detail === 'string' ? record.detail.trim() : ''
+    const record = item as {
+      title?: unknown
+      detail?: unknown
+      problem?: unknown
+      question?: unknown
+    }
+    const title = clean(record.title)
+    const detail = clean(record.detail)
+    const problem = clean(record.problem)
+    const question = clean(record.question)
     if (!title || !detail) return []
-    return [{ title, detail }]
+    return [
+      {
+        title,
+        detail,
+        ...(problem ? { problem } : {}),
+        ...(question ? { question } : {}),
+      },
+    ]
   })
 }
 
@@ -197,11 +253,16 @@ export function parseStudyNote(
     throw new Error('Gemini returned a note this app could not read.')
   }
 
+  const sliced = raw.slice(start, end + 1)
   let parsed: unknown
   try {
-    parsed = JSON.parse(raw.slice(start, end + 1))
+    parsed = JSON.parse(repairJsonLatex(sliced))
   } catch {
-    throw new Error('Gemini returned a note this app could not read.')
+    try {
+      parsed = JSON.parse(sliced)
+    } catch {
+      throw new Error('Gemini returned a note this app could not read.')
+    }
   }
 
   const lenses = new Map<string, StudyPoint[]>()
@@ -226,6 +287,13 @@ export function parseStudyNote(
   }
 
   return Object.fromEntries(
-    LENS_IDS.map((id) => [id, lenses.get(id) ?? dataset.sections[id].points]),
+    LENS_IDS.map((id) => {
+      const points = lenses.get(id) ?? dataset.sections[id].points
+      const normalized =
+        id === 'interviews'
+          ? points.map(normalizeInterviewPoint)
+          : points.map(({ title, detail }) => ({ title, detail }))
+      return [id, normalized]
+    }),
   ) as Record<StudyLens, StudyPoint[]>
 }

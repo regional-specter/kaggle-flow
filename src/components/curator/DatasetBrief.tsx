@@ -1,7 +1,5 @@
 import { motion } from 'framer-motion'
 import {
-  ArrowLeft,
-  ArrowRight,
   BookOpen,
   Briefcase,
   ChevronDown,
@@ -44,18 +42,57 @@ interface DatasetBriefProps {
   dataset: CuratedDataset
   bookmarked: boolean
   onToggleBookmark: () => void
-  onPrevious: () => void
-  onNext: () => void
-  hasPrevious: boolean
-  hasNext: boolean
-  onBackToList: () => void
-  hidden?: boolean
+  titleId?: string
   draftPoints?: Record<StudyLens, StudyPoint[]> | null
   draftStatus?: StudyDraftStatus
   draftError?: string | null
   hasGeminiKey?: boolean
   onRewrite?: () => void
   onGoToSettings?: () => void
+}
+
+function interviewCopy(point: StudyPoint): { problem: string; question: string; answer: string } {
+  const problem = point.problem?.trim() ?? ''
+  let question = point.question?.trim() ?? ''
+  let answer = point.detail.trim()
+
+  if (!question && point.title.includes('?')) question = point.title.trim()
+  if (!question) {
+    const match = answer.match(/[^.!?\n][^.!?\n]*\?/)
+    if (match?.[0]) {
+      question = match[0].trim()
+      const before = answer.slice(0, match.index).trim()
+      const after = answer.slice((match.index ?? 0) + match[0].length).trim()
+      answer = problem ? [before, after].filter(Boolean).join(' ') : after
+      return { problem: problem || before, question, answer }
+    }
+  }
+
+  return { problem, question: question || point.title, answer }
+}
+
+function PointCopy({ lens, point }: { lens: StudyLens; point: StudyPoint }) {
+  if (lens !== 'interviews') {
+    return (
+      <div className="min-w-0">
+        <RichText text={point.title} className="text-sm font-bold tracking-tight text-gray-900" />
+        <RichText text={point.detail} className="mt-1 text-sm leading-relaxed text-gray-600" />
+      </div>
+    )
+  }
+
+  const { problem, question, answer } = interviewCopy(point)
+
+  return (
+    <div className="min-w-0">
+      {problem && <RichText text={problem} className="text-sm leading-relaxed text-gray-600" />}
+      <RichText
+        text={question}
+        className={`text-[15px] font-bold leading-snug tracking-tight text-gray-950 ${problem ? 'mt-2.5' : ''}`}
+      />
+      {answer && <RichText text={answer} className="mt-1.5 text-sm leading-relaxed text-gray-600" />}
+    </div>
+  )
 }
 
 function initials(owner: string): string {
@@ -80,12 +117,7 @@ export function DatasetBrief({
   dataset,
   bookmarked,
   onToggleBookmark,
-  onPrevious,
-  onNext,
-  hasPrevious,
-  hasNext,
-  onBackToList,
-  hidden = false,
+  titleId,
   draftPoints = null,
   draftStatus = 'idle',
   draftError = null,
@@ -106,7 +138,7 @@ export function DatasetBrief({
   }
 
   return (
-    <section className={hidden ? 'hidden lg:block' : 'block'}>
+    <section>
       <motion.div
         key={dataset.ref}
         initial={{ opacity: 0, y: 8 }}
@@ -114,15 +146,6 @@ export function DatasetBrief({
         transition={{ duration: 0.25 }}
         className="p-4 sm:p-7"
       >
-        <button
-          type="button"
-          onClick={onBackToList}
-          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 lg:hidden"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          All datasets
-        </button>
-
         <header className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
@@ -149,7 +172,7 @@ export function DatasetBrief({
         </header>
 
         <div className="mt-5 flex flex-wrap items-start justify-between gap-3">
-          <h2 className="max-w-xl text-2xl font-bold tracking-tight text-gray-900">
+          <h2 id={titleId} className="max-w-xl text-2xl font-bold tracking-tight text-gray-900">
             {dataset.title}
           </h2>
           <StatusPill tone="good" label="Well processed" />
@@ -283,17 +306,8 @@ export function DatasetBrief({
                         draftStatus === 'loading' && !draftPoints ? 'opacity-60' : ''
                       }`}
                     >
-                      {points.map((point) => (
-                        <div key={point.title} className="min-w-0">
-                          <RichText
-                            text={point.title}
-                            className="text-sm font-bold tracking-tight text-gray-900"
-                          />
-                          <RichText
-                            text={point.detail}
-                            className="mt-1 text-sm leading-relaxed text-gray-600"
-                          />
-                        </div>
+                      {points.map((point, index) => (
+                        <PointCopy key={`${point.title}-${index}`} lens={lens.id} point={point} />
                       ))}
                     </div>
                   )}
@@ -301,27 +315,6 @@ export function DatasetBrief({
               )
             })}
           </div>
-        </div>
-
-        <div className="mt-6 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onPrevious}
-            disabled={!hasPrevious}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!hasNext}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2F6FED] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Next dataset
-            <ArrowRight className="h-4 w-4" />
-          </button>
         </div>
       </motion.div>
     </section>

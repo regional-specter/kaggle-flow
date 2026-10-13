@@ -23,7 +23,7 @@ export const STUDY_LENSES = [
   {
     id: 'interviews',
     title: 'Interview questions',
-    blurb: 'Questions a data-role screen can ask with this table open.',
+    blurb: 'The situation on this table, the question a screen would ask, and a direct answer.',
   },
   {
     id: 'research',
@@ -44,6 +44,8 @@ export type StudyTone = 'good' | 'warn' | 'idle'
 export interface StudyPoint {
   title: string
   detail: string
+  problem?: string
+  question?: string
 }
 
 export interface StudySection {

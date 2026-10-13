@@ -36,6 +36,7 @@ export function useStudyDraft(dataset: CuratedDataset | null, apiKey: string) {
         return
       }
 
+      if (!force) setPoints(null)
       abortRef.current?.abort()
       const controller = new AbortController()
       abortRef.current = controller

@@ -1,5 +1,6 @@
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
+import { prepareMathSource, repairStudyMath } from '../../utils/latex'
 
 type Chunk =
   | { kind: 'text'; value: string }
@@ -28,12 +29,40 @@ function splitMath(input: string): Chunk[] {
   return chunks.length > 0 ? chunks : [{ kind: 'text', value: input }]
 }
 
+function renderKatex(value: string, display: boolean): string | null {
+  const attempts = [value, value.replace(/\\left\s*/g, '').replace(/\\right\s*/g, '')]
+  for (const attempt of attempts) {
+    try {
+      return katex.renderToString(attempt, {
+        throwOnError: true,
+        displayMode: display,
+        output: 'html',
+        strict: 'ignore',
+      })
+    } catch {
+      continue
+    }
+  }
+  return null
+}
+
 function MathSpan({ value, display }: { value: string; display: boolean }) {
-  const html = katex.renderToString(value, {
-    throwOnError: false,
-    displayMode: display,
-    output: 'html',
-  })
+  const prepared = prepareMathSource(value)
+  const html = renderKatex(prepared, display)
+
+  if (!html) {
+    return (
+      <span
+        className={
+          display
+            ? 'my-3 block overflow-x-auto rounded-xl bg-gray-50 px-3 py-3 font-mono text-sm text-gray-800'
+            : 'font-mono text-[0.92em] text-gray-800'
+        }
+      >
+        {prepared}
+      </span>
+    )
+  }
 
   return (
     <span
@@ -48,8 +77,9 @@ function MathSpan({ value, display }: { value: string; display: boolean }) {
 }
 
 export function RichText({ text, className }: { text: string; className?: string }) {
-  const paragraphs = text.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean)
-  const blocks = paragraphs.length > 0 ? paragraphs : [text]
+  const source = repairStudyMath(text)
+  const paragraphs = source.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean)
+  const blocks = paragraphs.length > 0 ? paragraphs : [source]
 
   return (
     <div className={className}>
