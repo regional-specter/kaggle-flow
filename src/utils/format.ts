@@ -6,6 +6,11 @@ export function formatBytes(bytes?: number): string {
   return `${value < 10 ? value.toFixed(1) : Math.round(value)}${units[i]}`
 }
 
+/** Card-sized row counts: "217 thousand" → "217K", "13 million" → "13M". */
+export function formatRowLabel(label: string): string {
+  return label.replace(/ million/gi, 'M').replace(/ thousand/gi, 'K')
+}
+
 export function formatCount(value?: number): string {
   if (value == null) return '—'
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`

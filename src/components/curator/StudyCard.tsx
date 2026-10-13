@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Heart } from 'lucide-react'
 import type { CuratedDataset } from '../../types/curator'
 import { tableSize } from '../../data/curatedDatasets'
+import { formatRowLabel } from '../../utils/format'
 
 interface StudyCardProps {
   dataset: CuratedDataset
@@ -62,7 +63,7 @@ export function StudyCard({ dataset, bookmarked, onOpen, onToggleBookmark }: Stu
 
         <div className="mt-5 flex items-end justify-between gap-3">
           <div>
-            <p className="text-2xl font-bold tracking-tight text-gray-900">{dataset.rowsLabel}</p>
+            <p className="text-2xl font-bold tracking-tight text-gray-900">{formatRowLabel(dataset.rowsLabel)}</p>
             <p className="mt-0.5 text-xs text-gray-400">Rows · {dataset.shape}</p>
           </div>
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#2F6FED]">

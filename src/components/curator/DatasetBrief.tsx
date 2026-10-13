@@ -15,7 +15,7 @@ import type { StudyDraftStatus } from '../../hooks/useStudyDraft'
 import type { CuratedDataset, StudyLens, StudyPoint } from '../../types/curator'
 import { STUDY_LENSES } from '../../types/curator'
 import type { StudyTone } from '../../types/curator'
-import { getKaggleDatasetUrl } from '../../utils/format'
+import { formatRowLabel, getKaggleDatasetUrl } from '../../utils/format'
 import { RichText } from './RichText'
 
 const lensIcons = {
@@ -194,7 +194,7 @@ export function DatasetBrief({
         <div className="my-5 border-t border-dashed border-gray-200" />
 
         <p className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-          {dataset.rowsLabel}
+          {formatRowLabel(dataset.rowsLabel)}
         </p>
         <p className="mt-1.5 text-sm text-gray-400">
           Rows on file · {dataset.shape}

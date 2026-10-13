@@ -39,7 +39,8 @@ export function StudyView({
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return order.filter((dataset) => {
+    const source = query ? curatedDatasets : order
+    return source.filter((dataset) => {
       if (topic !== 'All' && dataset.topic !== topic) return false
       if (!query) return true
       const haystack = [dataset.title, dataset.owner, dataset.topic, dataset.summary, dataset.fileNote, ...dataset.tags]
@@ -62,11 +63,12 @@ export function StudyView({
     <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Study list</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Study picks</h1>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-500">
-            {curatedDatasets.length} public tables for ordinary machine learning and statistics.
-            Refresh the page, or shuffle, for a new arrangement. Each table has a plan for models,
-            checks, interview questions, research, and a real-world use.
+            {order.length} public tables with unusual subjects: language practice, race cars, launches,
+            chess, sport, and other work that is out of the ordinary. Refresh the page, or shuffle, for
+            a new draw. Each table has a plan for models, checks, interview questions, research, and a
+            real-world use.
           </p>
         </div>
         <button

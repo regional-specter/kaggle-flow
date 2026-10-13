@@ -1,5 +1,6 @@
 import type { CuratedDataset } from '../../types/curator'
 import { tableSize } from '../../data/curatedDatasets'
+import { formatRowLabel } from '../../utils/format'
 
 function SignalBars({ filled }: { filled: number }) {
   return (
@@ -25,7 +26,7 @@ export function StatsRail({ dataset }: { dataset: CuratedDataset }) {
     <aside className="rounded-[28px] bg-[#1C1C1E] p-5 text-white shadow-card">
       <p className="text-lg font-semibold tracking-tight">Stats</p>
       <p className="mt-5 text-sm text-gray-400">Rows</p>
-      <p className="mt-1 text-4xl font-bold tracking-tight">{dataset.rowsLabel}</p>
+      <p className="mt-1 text-4xl font-bold tracking-tight">{formatRowLabel(dataset.rowsLabel)}</p>
       <p className="mt-1 text-sm font-medium leading-snug text-emerald-400">{dataset.fileNote}</p>
 
       <div className="mt-5 rounded-2xl bg-white/10 px-4 py-3.5">

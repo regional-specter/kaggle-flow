@@ -77,5 +77,10 @@ export interface CuratedDataset {
     research: number
     applied: number
   }
+  /**
+   * How far the subject sits from a standard textbook table.
+   * The study draw samples with weight curiosity squared. Omitted scores are treated as ordinary.
+   */
+  curiosity?: number
   sections: Record<StudyLens, StudySection>
 }
